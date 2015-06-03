@@ -326,8 +326,7 @@ function createModel() {
 				return null;
 			}
 			var storage = getStorage.apply(this);
-	
-			if(!value) {
+			if(arguments.length < 2) {
 				return storage[key];	
 			}
 			return storage[key] = value;

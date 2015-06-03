@@ -1,216 +1,186 @@
-var Position = require('./position.js');
+var Position = require('./position.js'),
+	Model = require('../libs/model.js');
 
-var Scene = function(y, x, item) {
-	var self = this,
-		DefaultItem = {
-			isEmpty: true
-		},
-		scene = [],
-		positon = [0, 0];
-	
-	DefaultItem = item || DefaultItem;
+var Scene = Model.extend({
+	init: function(x, y, Element) {
+		this.private('Element', Element);
 
-	this.print = function() {
-		console.log(scene);
-	};
+		var world = makeWorld.apply(this, [x, y]);
+		this.private('world', world);
+	},
 
-	this.get = function() {
-		return scene;
-	};
+	get: get,
+	hasElement: hasElement,
+	addElement: addElement,
+	detectVectorByAxle: detectVectorByAxle,
 
-	this.getCurrent = function() {
-		return self.getItem(positon);
-	};
-
-	this.getItem = function(position) {
-		var valid = self.checkNextPosition.apply(self, position);
-		if(!valid) {
-			return false;
-		}
-
-		return this.get()[position[0]][position[1]];
-	};
-
-	this.changeCurrentItem = function(item) {
-		return self.changeItem(positon, item);
-	};
-
-	this.changeItem = function(itemPosition, item) {		
-		var valid = self.checkNextPosition.apply(self, itemPosition);
-		if(!valid) {
-			return false;
-		}
-		
-		scene[itemPosition[0]][itemPosition[1]] = item;
-		item.position = itemPosition;
-		return true;
-	};
-
-	this.setPosition = function(y, x, item) {
-		var itemPositon = (item || {}).position || positon;
-		var item = item || self.getItem(itemPositon);
-		self.cleanCurrentPlace(itemPositon);
-		itemPositon[0] = y;
-		itemPositon[1] = x;
-		scene[y][x] = item;
-		item.position = itemPositon;
-	};
-
-	this.changeItemPosition = function(item, toPosition) {
-		var valid = self.checkNextPosition.apply(self, toPosition);
-		if(!valid) {
-			return false;
-		}
-		return self.setPosition(toPosition[0], toPosition[1], item);
-	};
-
-	this.moveRight = function(steps) {
-		var newPosition = self.genNextPosition('right', steps);
-		var valid = self.checkNextPosition.apply(self, newPosition);
-		if(!valid) {
-			return false;
-		}
-		self.setPosition.apply(self, newPosition);
-	};
-
-	this.moveLeft = function(steps) {
-		var newPosition = self.genNextPosition('left', steps);
-		var valid = self.checkNextPosition.apply(self, newPosition);
-		if(!valid) {
-			return false;
-		}
-		self.setPosition.apply(self, newPosition);
-	};
-
-	this.moveBottom = function(steps) {
-		var newPosition = self.genNextPosition('bottom', steps);
-		var valid = self.checkNextPosition.apply(self, newPosition);
-		if(!valid) {
-			return false;
-		}
-		self.setPosition.apply(self, newPosition);
-	};
-
-	this.moveTop = function(steps) {
-		var newPosition = self.genNextPosition('top', steps);
-		var valid = self.checkNextPosition.apply(self, newPosition);
-		if(!valid) {
-			return false;
-		}
-		self.setPosition.apply(self, newPosition);
-		return true;
-	};
-
-	this.cleanCurrentPlace = function(itemPositon) {
-		var oldPositon = itemPositon || position;
-		scene[oldPositon[0]][oldPositon[1]] = defaultItem;
-	}
-
-	this.checkNextPosition = function(y, x) {
-		if(!scene[y] || !scene[y][x]) {
-			return false;
-		}
-		var item = scene[y][x];
-		if(item.impassable) {
-			return false;
-		}
-		return true;
-	};
-
-	this.genNextPosition = function(vector, steps) {
-		var y = positon[0],
-			x = positon[1];
-
-		if(vector === 'top') {
-			y = y - steps;
-			return [y, x];
-		}
-
-		if(vector === 'bottom') {
-			y = y + steps;
-			return [y, x];
-		}
-
-		if(vector === 'right') {
-			x = x + steps;
-			return [y, x];
-		}
-
-		if(vector === 'left') {
-			x = x - steps;
-			return [y, x];
-		}
-	};
-
-	for(var i = 0; y > i; i++) {
-		var list = [];
-		for(var n = 0; x > n; n++) {
-			var defaultItem = new DefaultItem();
-			defaultItem.position = [i, n];
-			list.push(defaultItem);
-		}
-		scene.push(list);
-	}
-	
-	this.setPosition.apply(this, positon);
-};
-
-Scene.prototype.moveElTo = function(el, vector, step) {
-	var position = this.getElPosition(el);
-	position = this.changePositionTo(position, vector, step);
-	return this.moveElToPosition(position, el);
-};
-
-Scene.prototype.checkMoveTo = function(el, vector, step) {
-	var position = this.getElPosition(el);
-	position = this.changePositionTo(position, vector, step);
-	
-	return this.checkNextPosition.apply(this, [position.y, position.x]);
-};
-
-Scene.prototype.moveElToPosition = function(position, el) {
-	var valid = this.checkNextPosition.apply(this, [position.y, position.x]);
-	if(!valid) {
-		return false;
-	}
-	return this.setPosition(position.y, position.x, el);
-};
-
-
-Scene.prototype.changePositionTo = function(position, vector, step) {
-	switch(vector) {
-		case 'up':
-			position.y = position.y - step;
-			break;
-		case 'down':
-			position.y = position.y + step;
-			break;
-		case 'left':
-			position.x = position.x- step;
-			break;
-		case 'right':
-			position.x = position.x + step;
-			break;
-	}
-	return position;
-};
-
-Scene.prototype.getElPosition = function(El) {
-	var status = false,
-		places = this.get(),
-		position = new Position();
-
-	for(var y_index in places) {
-		var x_index = places[y_index].indexOf(El);
-		if(!~x_index) {
-			continue;
-		}
-		position.y = y_index;
-		position.x = x_index;
-		status = true;
-		break;
-	}
-	return status ? position : null;
-};
+	getNextStepPosition: getNextStepPosition,
+	getElement: getElement,
+	getElementPosition: getElementPosition,
+	moveElementTo: moveElementTo
+});
 
 module.exports = Scene;
+
+function get() {
+	return this.private('world');
+}
+
+function hasElement(element) {
+	return !!this.getElementPosition(element);
+}
+
+function createElement() {
+	var Element = this.private('Element');
+	return new Element({}, this);
+}
+
+function getElement(position) {
+	var world = this.get(),
+		y = position.y,
+		x = position.x;
+
+	return world[y][x];
+}
+
+function getElementPosition(element) {
+	var world = this.get(),
+		position = new Position();
+
+	for(var y_index in world) {
+		var el_index = world[y_index].indexOf(element);
+		if(!~el_index) {
+			continue;
+		}
+		position.setY(y_index);
+		position.setX(el_index);
+		break;
+	}
+	return position.isEmpty() ? null : position;
+}
+
+function clearCell(position) {
+	var element = createElement.apply(this);
+	return updateCell.apply(this, [element, position]);
+}
+
+function makeWorld(x, y) {
+	var world = [];
+	for(var y_index = 0; y > y_index; y_index++) {
+		var row = [];
+		for(var x_index = 0; x > x_index; x_index++) {
+			var element = createElement.apply(this),
+				position = new Position(x_index, y_index);
+
+			element.private('position', position);
+			row.push(element);
+		}
+		world.push(row);
+	}
+	return world;
+}
+
+function moveElementTo(vector, element, step) {
+	step = step || 1;
+	var next_position = this.getNextStepPosition(vector, element, step);
+	return moveElementToPosition.apply(this, [element, next_position]);
+}
+
+function moveElementToPosition(element, position) {
+	if(!isExistsCell.apply(this, [position])) {
+		return false;
+	}
+	var old_position = this.getElementPosition(element);
+	clearCell.apply(this, [old_position]);
+	return setElementToPosition.apply(this, [element, position]);
+}
+
+function addElement(element, positionData) {
+	var position = new Position(positionData[0], positionData[1]);
+	return setElementToPosition.apply(this, [element, position]);
+}
+
+function setElementToPosition(element, position) {
+	return updateCell.apply(this, [element, position]);
+}
+
+function updateCell(element, position) {
+	if(!isExistsCell.apply(this, [position])) {
+		return false;
+	}
+	var world = this.get(),
+		y = position.y,
+		x = position.x;
+	var old_element = world[y][x];
+	old_element.removeFromScene();
+	element.addToScene(this);
+	world[y][x] = element;
+	return true;
+}
+
+function isExistsCell(position) {
+	var world = this.get(),
+		y = position.y,
+		x = position.x;
+
+	if(!world[y] || !world[y][x]) {
+		return false;
+	}
+	return true;
+}
+
+function getNextStepPosition(vector, element, step) {
+	var axle = detectAxle(vector),
+		position = this.getElementPosition(element),
+		next_position = new Position(),
+		method = axle.axle === 'x' ? 'setX' : 'setY';
+	
+	next_position.setX(position.x);
+	next_position.setY(position.y);
+
+	var axleValue = position[axle.axle];
+	axleValue = axle.negative ? axleValue - step : axleValue + step;
+
+	next_position[method](axleValue)
+	return next_position;
+}
+
+function getAxlesMap() {
+	return {
+		up: {
+			axle: 'y',
+			negative: true
+		},
+		down: {
+			axle: 'y',
+			negative: false
+		},
+		left: {
+			axle: 'x',
+			negative: true
+		},
+		right: {
+			axle: 'x',
+			negative: false
+		}
+	};
+}
+
+function detectAxle(vector) {
+	var map = getAxlesMap();
+	return map[vector];
+}
+
+function detectVectorByAxle(axle) {
+	var map = getAxlesMap(),
+		vectorValue = null;
+	for(var vector in map) {
+		var axleMap = map[vector];
+		if(axleMap.axle !== axle.axle || axleMap.negative !== axle.negative) {
+			continue;
+		}
+		vectorValue = vector;
+		break;
+	}
+	return vectorValue;
+}

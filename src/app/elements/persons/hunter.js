@@ -1,5 +1,5 @@
 var PersonElement = require('./person.js');
-
+var Position = require('./../../scene/position.js');
 
 var Hunter = PersonElement.extend({
 	impassable: true,
@@ -8,70 +8,54 @@ var Hunter = PersonElement.extend({
 	init: function(opts) {
 		this.name = ':(';
 	},
-	kill: function(item) {
+
+	kill: function(element) {
 		var self = this;
+
 		var killing = setInterval(function() {
-			self.moveToItem(item);
+			var moveStatus = self.moveToElement(element);
+			if(!moveStatus) {
+				clearInterval(killing);
+				return false;
+			}
 		}, 500);
-		
-		this.private('killing', killing);
-	},
-	moveToItem: function(item) {
-		var scena = this.private('scene'),
-			myPosition = scena.getElPosition(this),
-			itemPosition = scena.getElPosition(item),
-			position = this.detectPrimatyVector(myPosition, itemPosition);
-
-		return this.moveTo(position);
 	},
 
-	detectPrimatyVector: function(myPos, elPost) {
-		var vectorsMap = {
-				x: ['left', 'right'],
-				y: ['up', 'down']
-			},
-			vectors = {
-				x: elPost.x - myPos.x,
-				y: elPost.y - myPos.y
-			},
-			vectorKey = (vectors.x < vectors.y) ? 'x' : 'y';
-			
-		if(this.private('wrongVector')) {
-			vectorKey = this.private('vectorValue');
-			vectors[vectorKey] = - vectors[vectorKey];
-		}
-
-		var vectorValue = getValueByKey(vectorKey);
-
-		if(!this.checkMoveAbility(vectorValue)) {
-			vectorKey = (vectorKey === 'x') ? 'y' : 'x';
-			vectorValue = getValueByKey(vectorKey);
-		}
-
-		if(!this.checkMoveAbility(vectorValue)) {
-			this.private('wrongVector', true);
-		}
-
-		this.private('vectorValue', vectorKey);
-		return vectorValue;
-
-		function getValueByKey(key) {
-			var value = vectors[key],
-				vectorMap = vectorsMap[key],
-				isNegative = (value < 0);
-
-			return isNegative ? vectorMap[0] : vectorMap[1];
-		}
-	},
-
-	
-	
-	hasBackAbility: function(position) {
-		if(position[0] === 0 && position[1] === 0) {
-			return false;
-		}
-		return true;
-	}
+	moveToElement: moveToElement
 });
+
+function moveToElement(element) {
+	var scene = this.private('scene');
+	if(!scene.hasElement(element)) {
+		return false;
+	}
+
+	var my_positon = scene.getElementPosition(this),
+		el_position = scene.getElementPosition(element),
+		vector = detectVector.apply(this, [my_positon, el_position]);
+
+	console.log(my_positon, el_position);
+	return this.moveTo(vector);
+}
+
+function detectVector(my_positon, el_position) {
+	var scene = this.private('scene'),
+		x_diff = my_positon.x - el_position.x,
+		y_diff = my_positon.y - el_position.y;
+
+	var axle = detectAxle(x_diff, y_diff),
+		negative = (axle === 'x') ? x_diff > 0 : y_diff > 0;
+
+	return scene.detectVectorByAxle({
+		axle: axle,
+		negative: negative
+	});
+}
+
+function detectAxle(x_diff, y_diff) {
+	x_diff = Math.abs(x_diff);
+	y_diff = Math.abs(y_diff);
+	return (y_diff === 0 || x_diff >= y_diff) ? 'x' : 'y';
+}
 
 module.exports = Hunter;

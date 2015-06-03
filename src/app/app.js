@@ -9,46 +9,36 @@ var HunterElement = require('./elements/persons/hunter.js');
 angular
 	.module('a', [])
 	.controller('ACtrl', function($scope, $timeout) {
-		$scope.scene = new Scene(15, 25, BaseElement);
+		$scope.scene = new Scene(20, 20, BaseElement);
 
 		var victim = new VictimElement({}, $scope.scene);
-		$scope.scene.changeCurrentItem(victim);
+		$scope.scene.addElement(victim, [0,0]);
 
-		$scope.scene.changeItem([0,5], new BlockElement());
-		$scope.scene.changeItem([1,5], new BlockElement());
-		$scope.scene.changeItem([2,5], new BlockElement());
-		$scope.scene.changeItem([3,5], new BlockElement());
-		$scope.scene.changeItem([4,5], new BlockElement());
-		$scope.scene.changeItem([5,5], new BlockElement());
-		$scope.scene.changeItem([6,5], new BlockElement());
-		$scope.scene.changeItem([7,5], new BlockElement());
-		$scope.scene.changeItem([8,5], new BlockElement());
+//		$scope.scene.changeItem([0,5], new BlockElement());
+//		$scope.scene.changeItem([1,5], new BlockElement());
+//		$scope.scene.changeItem([2,5], new BlockElement());
+//		$scope.scene.changeItem([3,5], new BlockElement());
+//		$scope.scene.changeItem([4,5], new BlockElement());
+//		$scope.scene.changeItem([5,5], new BlockElement());
 
 		var hanter = new HunterElement({}, $scope.scene);
-		$scope.scene.changeItem([9,9], hanter);
+		$scope.scene.addElement(hanter, [6,6]);
 		hanter.kill(victim);
 		
-		victim.runFrom(hanter);
-		
-		var person = new PersonElement({
-			name: 'Boss'
-		}, $scope.scene);
-		$scope.scene.changeItem([5, 1], person);
-		
 		key('left', function(){
-			person.moveTo('left');
+			victim.moveTo('left');
 			$scope.$digest();
 		});
 		key('right', function(){
-			person.moveTo('right');
+			victim.moveTo('right');
 			$scope.$digest();
 		});
 		key('up', function(){
-			person.moveTo('up');
+			victim.moveTo('up');
 			$scope.$digest();
 		});
 		key('down', function(){
-			person.moveTo('down');
+			victim.moveTo('down');
 			$scope.$digest();
 		});
 		window.scene = $scope.scene;
