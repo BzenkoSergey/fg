@@ -1,12 +1,18 @@
-var Base = require('../base.js');
+var Base = require('../elements/base.js');
+var VectorsUtils = require('./../core/vectors-utils.js');
 
 var Person = Base.extend({
+	isPerson: true,
 	isEmpty: true,
 	step: 1,
 	impassable: true,
 	init: function(opts) {
 		opts = opts || {};
 		this.name = opts.name;
+		this.vectors = {};
+	},
+	css: {
+		backgroundColor: 'yellow'	
 	},
 
 	moveTo: moveTo,
@@ -25,11 +31,22 @@ function getPosition() {
 }
 
 function moveTo(vector) {
+					if(this.isVictim) {
+	console.log('moveTo', arguments.callee.caller);
+					}
+			
 	var scene = this.private('scene');
 	if(!scene) {
 		return false;
 	}
-	return scene.moveElementTo(vector, this, this.step);
+
+	var map = VectorsUtils.vectorsMap(vector);
+	this.vectors[map.axis] = vector;
+	
+	var oppositeAxis = VectorsUtils.oppositeAxis(map.axis);
+	this.vectors[oppositeAxis] = null;
+
+	return scene.moveToSide(vector, this, this.step);
 }
 
 function checkMoveAbility(vector) {

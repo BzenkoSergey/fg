@@ -183,9 +183,7 @@ function createModel() {
 	
 				// add create ability to builder
 				this.create = function(baseObject) {
-					isCreatingBaseProcess = true;
-					var BaseModel = createChild.apply(baseObject || Object);
-					isCreatingBaseProcess = false;
+					var BaseModel = createChild.apply(baseObject || Object, [{}, true]);
 					return BaseModel;
 				};
 			}
@@ -233,12 +231,14 @@ function createModel() {
 			};
 		}
 		
-		function createChild(custom) {
+		function createChild(custom, isBase) {
+			isCreatingBaseProcess = isBase ? true : isCreatingBaseProcess;
 			isCreatingChildProcess = true;
 			custom = custom || {};
 			var Model = createClass.apply(this, arguments);
 			createProto.apply(this, [Model, custom]);
 			isCreatingChildProcess = false;
+			isCreatingBaseProcess = isBase ? false : isCreatingBaseProcess;
 			return Model;
 		}
 	

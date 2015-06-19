@@ -1,8 +1,7 @@
 var Base = require('./base.js');
 
-var Block = Base.extend({
+var Road = Base.extend({
 	impassable: true,
-	isBlock: true,
 	css: {
 		backgroundColor: 'rgb(79, 129, 189)',
 		border: 'none'
@@ -15,4 +14,4 @@ var Block = Base.extend({
 	}
 });
 
-module.exports = Block;
+module.exports = Road;

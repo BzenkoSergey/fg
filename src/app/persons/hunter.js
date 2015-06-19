@@ -1,10 +1,14 @@
 var PersonElement = require('./person.js');
-var Position = require('./../../scene/position.js');
+var Position = require('./../core/position.js');
 
 var Hunter = PersonElement.extend({
 	impassable: true,
 	isHunter: true,
 	step: 1,
+	css: {
+		backgroundColor: 'black'
+	},
+	hardness: 0.1,
 	init: function(opts) {
 		this.name = ':(';
 	},
