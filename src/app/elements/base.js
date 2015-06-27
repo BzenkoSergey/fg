@@ -17,6 +17,10 @@ var Base = Model.extend({
 		}
 		this.addToScene(scene);
 		this.name = '';
+		var css = (opts || {}).css;
+		if(css) {
+			this.css = css;
+		}
 	},
 	removeFromScene: function() {
 		this.private('scene', undefined);

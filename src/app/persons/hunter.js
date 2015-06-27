@@ -25,7 +25,13 @@ var Hunter = PersonElement.extend({
 		}, 500);
 	},
 
-	moveToElement: moveToElement
+	moveToElement: moveToElement,
+	conflict: function(isAttack) {
+		if(isAttack) {
+			return false;
+		}
+		return true;
+	}
 });
 
 function moveToElement(element) {

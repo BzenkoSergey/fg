@@ -1,17 +1,57 @@
-var VectorsUtils = require('./../vectors-utils.js');
+var VectorsUtils = require('./../vectors-utils.js'),
+	BaseElement = require('../../elements/base.js'),
+	Position = require('./../position.js');
 
 var utils = {
-	isExistsCell: isExistsCell,
+	isExists: isExists,
 	createEl: createEl,
-	get: get,
-	mapIterator: mapIterator
+	mapIterator: mapIterator,
+	createMap: createMap,
+	posNormalizer: posNormalizer,
+	isEl: isEl,
+	getPosition: getPosition
 };
 
 
 module.exports = utils;
 
-function isExistsCell(pos) {
-	var y = pos.y, x = pos.x;
+function createMap(size) {
+	for(var y = 0; size.y > y; y++) {
+		var row = [];
+		this.push(row);
+
+		for(var x = 0; size.x > x; x++) {
+			var el = createEl.apply(this);
+			row.push(el);
+		}
+	}
+	return this;
+}
+
+function createEl(params) {
+	var el = this.Element || null;
+	if(el) {
+		el = new this.Element(params, this);
+		el.owner = this; // TODO!!!!
+	}
+	return el;
+}
+
+function isEl(el) {
+	return (el === null || el instanceof BaseElement);
+}
+
+function posNormalizer(pos, posY) {
+	var isPos = (pos instanceof Position);
+	if(isPos) {
+		return pos;
+	}
+	return new Position(pos, posY);
+}
+
+function isExists(pos) {
+	var y = pos.y,
+		x = pos.x;
 
 	if(this.length <= y) {
 		return false;
@@ -23,23 +63,16 @@ function isExistsCell(pos) {
 	return true;
 }
 
-function createEl(params) {
-	var el = this.Element;
-	if(el) {
-		el = new this.Element(params, this);
-	}
-	return el;
-}
-
-function get(pos) {
-	pos = VectorsUtils.normalizePosition(pos);
-
-	var cellExists = isExistsCell.apply(this, [pos]);
-	if(!cellExists) {
+function getPosition(fromEl) {
+	var el_pos;
+	mapIterator(this, function(el, pos) {
+		if(fromEl !== el) {
+			return true;
+		}
+		el_pos = pos;
 		return false;
-	}
-
-	return this[pos.y][pos.x];
+	});
+	return el_pos || false;
 }
 
 function mapIterator(map, mapPos, cb) {
@@ -62,7 +95,7 @@ function mapIterator(map, mapPos, cb) {
 			var el = map[y][x],
 				el_pos = VectorsUtils.normalizePosition(x, y),
 				parent_pos;
-				
+
 			if(mapPos) {
 				parent_pos = VectorsUtils.normalizePosition([mapPos.x + x, mapPos.y + y]);
 			}
@@ -80,4 +113,5 @@ function mapIterator(map, mapPos, cb) {
 			break;
 		}
 	}
+	return status;
 }

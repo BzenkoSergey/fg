@@ -1,143 +1,174 @@
-var Map = require('./map/map.js');
-var VectorsUtils = require('./vectors-utils.js');
+var Map = require('./map/map.js'),
+	MapUtils = require('./map/utils.js');
 
-var Figure = Map.extend({
-	isFigure: true,
-	parentFigure: null,
-	addFigure: addFigure,
-	conflict: conflict,
-	moveToSide: moveToSide,
-	moveFigureTo: moveFigureTo
-});
+// for methods decoration
+var mapProto = Map.prototype,
+
+	Figure = Map.extend({
+		isFigure: true,
+
+		add: add,
+		remove: remove
+	});
 
 module.exports = Figure;
 
-function moveFigureTo(vector, step) {
-	var vectorMap = VectorsUtils.vectorsMap(vector);
+function checkConflicts(map, pos, inMap, removeOnConflict) {
+	return MapUtils.mapIterator(map, pos, function(el, el_pos, posInParent) {
+		return checkConflict.apply(inMap, [el, posInParent, removeOnConflict]);
+	});
+}
 
-	var y_position = true;
-	if(vectorMap.axis === 'y') {
-		y_position = vectorMap.vector;
-	}
-	
-	var x_position = true;
-	if(vectorMap.axis === 'x') {
-		x_position = vectorMap.vector;
-	}
+function checkConflict(el, posInParent, removeOnConflict) {
+	var status = this.checkConflict(el, posInParent);
 
-	if(y_position) {
-		for(var y = 0; this.length > y; y++) {
-			if(x_position) {
-				for(var x = 0; this[y].length > x; x++) {
-					var element = this[y][x]
-					
-					if(element.isVictim) {
-						console.log('element.moveTo', arguments.callee.caller);
-					}
-	
-					element.moveTo(vector);
-					//console.log(element);
-					if(element.isVictim) {
-						debugger;
-					}
-				}
-			} else {
-				for(var x = this[y].length -1; 0 <= x; x--) {
-					var element = this[y][x];
-					element.moveTo(vector);
-				}
-			}
+	if(window.asd) console.log('checkConflict');
+
+	if(removeOnConflict && !status) {
+		var conflict_el = this.get(posInParent),
+			owner = conflict_el.owner,
+			isGlobal = !owner.figureParent,
+			removeSelf = this === owner;
+
+		if(!isGlobal && !removeSelf) {
+			conflict_el = owner;
 		}
-	} else {
-		for(var y = this.length -1 ; 0 <= y; y--) {
-			if(x_position) {
-				for(var x = 0; this[y].length > x; x++) {
-					var element = this[y][x];
-					element.moveTo(vector);
-				}
-			} else {
-				for(var x = this[y].length -1; 0 <= x; x--) {
-					var element = this[y][x];
-					element.moveTo(vector);
-				}
-			}
-		}
-	}
-}
 
-function moveToSide(vector, element, step) {
-	if(element.isVictim) {
-		console.log(arguments.callee.caller);
-	}
-
-	if(this.parentMap) {
-		 var status = Map.prototype.moveToSide.apply(this, arguments);
-		 return status ? this.parentMap.moveToSide(vector, element, step) : status;
-	}
-
-	return Map.prototype.moveToSide.apply(this, arguments);
-}
-
-function addFigure(figure, position) {
-	if(!isFigure(figure)) {
-		return false;
-	}
-
-	position = VectorsUtils.normalizePosition(position);
-	figure.position = position;
-	figure.parentMap = this;
-
-	var size = figure.size,
-		positions = VectorsUtils.genSizePositions(size, position);
-
-	return true || addFigureToPositions.apply(this, [figure, positions]);
-}
-
-function conflict(element, isAttack) {
-	debugger;
-	return !isAttack;
-}
-
-/**
- * Helpers methods
- */
-function isFigure(figure) {
-	return (figure instanceof Figure);
-}
-
-function addFigureToPositions(figure, positions) {
-	if(!positions) {
-		return false;
-	}
-	var allowed = checkFigurePositions.apply(this, [figure, positions]);
-	if(!allowed) {
-		return false;
-	}
-
-	var status = true;
-	for(var key in positions) {
-		var position = positions[key].position,
-			size_position = positions[key].size_position,
-			adding = true || this.add(figure, position);
-		
-		if(!adding) {
-			status = false;
-			break;
-		}
-	}
-	return status ? figure : false;
-}
-
-function checkFigurePositions(figure, positions) {
-	var status = true;
-	for(var key in positions) {
-		var position = positions[key].position,
-			element = this.get(position);
-
-		if(!element.conflict(figure, true)) {
-			status = false;
-			break;
-		}
+		this.remove(conflict_el);	
+		status = this.checkConflict(el, posInParent);
 	}
 	return status;
+}
+
+// Adding
+function add(el, pos, noConflict) {
+	pos = MapUtils.posNormalizer(pos);
+	if(!this.checkExist(pos)) {
+		return false;
+	}
+
+	var args = [el, pos, noConflict];
+
+	if(el.isFigure) {
+		return addFigure.apply(this, args);
+	}
+	return addEl.apply(this, args);
+}
+
+function addFigure(figure, pos, noConflict) {
+	if(window.asd) {
+		//console.log('addFigure', figure, pos, noConflict);
+	}
+
+	var hasConflicts = !checkConflicts.apply(this, [figure, pos, this, noConflict]);
+	if(!noConflict && hasConflicts) {
+		return false;
+	}
+
+	var figureParent = this;
+	figure.figurePos = pos;
+	figure.figureParent = figureParent;
+
+	MapUtils.mapIterator(figure, pos, function(el, el_pos, posInParent) {
+		figureParent.add(el, posInParent, noConflict);
+	});
+	return true;
+}
+
+function addEl(el, pos, noConflict) {
+	if(window.asd) {
+		//console.log('addEl', el, pos, noConflict);
+	}
+	var hasConflict = !checkConflict.apply(this,  [el, pos, noConflict]);
+	if(!noConflict && hasConflict) {
+		return false;
+	}
+
+	var result = mapProto.add.apply(this, arguments);
+	if(!result) {
+		return false;
+	}
+	return addElToTree.apply(this, arguments);
+}
+
+function addElToTree(el, pos, noConflict) {
+	var figureParent = this.figureParent;
+	if(!figureParent) {
+		return true;
+	}
+
+	var parent_pos = this.figurePos,
+		new_pos = [
+			pos.x + parent_pos.x,
+			pos.y + parent_pos.y
+		];
+
+	return figureParent.add(el, new_pos, noConflict);
+}
+
+
+// Removing
+function remove(el) {
+
+	if(window.asd) console.log('remove');
+
+	if(el && el.isFigure) {
+		return removeFigure.apply(this, arguments);
+	}
+	return removeEl.apply(this, arguments);
+}
+
+function detectFigureToRemove(figure, removeFrom) {
+	debugger;
+	if(window.asd) console.log('detectFigureToRemove');
+	var figureParent = figure.figureParent;
+	if(figureParent === removeFrom) {
+		return figure;
+	}
+
+	return detectFigureToRemove(figureParent, removeFrom);
+}
+
+function removeFigure(figure) {
+	if(window.asd) console.log('removeFigure');
+
+	figure = detectFigureToRemove(figure, this);
+	
+	
+
+	var self = this,
+		figureParent = figure.figureParent,
+		isGlobal = !figureParent.figureParent;
+
+	MapUtils.mapIterator(figure, function(el) {
+		self.remove(el);
+	});
+	
+	if(!isGlobal && figureParent && figureParent !== this) {
+		console.log(figureParent === this);
+		removeFigure.apply(figureParent.figureParent, [figureParent]);
+	}
+
+	return true;
+}
+
+function removeEl(el) {
+	if(window.asd) console.log('removeEl');
+
+	var result = mapProto.remove.apply(this, arguments);
+	if(!result) {
+		return false;
+	}
+
+	return removeElFromTree.apply(this, arguments);
+}
+
+function removeElFromTree(el) {
+	if(window.asd) console.log('removeElFromTree');
+
+	var figureParent = this.figureParent;
+	if(!figureParent) {
+		return true;
+	}
+	return figureParent.remove(el);
 }
